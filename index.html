@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Guessing Game</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Changed to top-aligned for long lists */
+            padding-top: 50px;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+        }
+        .game-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 350px;
+        }
+        input {
+            padding: 12px;
+            width: 100px;
+            font-size: 1.1rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+        }
+        button {
+            padding: 12px 24px;
+            margin: 10px 5px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover { background-color: #0056b3; }
+        #message {
+            margin-top: 1rem;
+            font-weight: bold;
+            font-size: 1.1rem;
+            min-height: 1.2em;
+        }
+        .history-section {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+            text-align: left;
+        }
+        #guessList {
+            list-style: none;
+            padding: 0;
+            margin-top: 10px;
+            max-height: 300px; /* Limits height if game goes long */
+            overflow-y: auto;
+        }
+        .guess-item {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            margin-bottom: 5px;
+            border-radius: 6px;
+            border-left: 4px solid #007bff;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.95rem;
+        }
+        .guess-label { color: #6c757d; font-weight: normal; }
+        .guess-value { font-weight: bold; color: #333; }
+    </style>
+</head>
+<body>
+
+<div class="game-container">
+    <h1>Guess the Number</h1>
+    <p>Pick a number between 0 and 100</p>
+    
+    <input type="number" id="userGuess" min="0" max="100" placeholder="0-100" onkeydown="handleKeyPress(event)">
+    <br>
+    <button onclick="checkGuess()">Submit Guess</button>
+
+    <div id="message"></div>
+    <button id="resetBtn" style="display:none; background-color: #28a745;" onclick="resetGame()">Play Again</button>
+
+    <div class="history-section">
+        <strong>Guess History:</strong>
+        <ul id="guessList"></ul>
+    </div>
+</div>
+
+<script>
+    let randomNumber = Math.floor(Math.random() * 101);
+    let guessHistory = [];
+
+    const messageDisplay = document.getElementById('message');
+    const resetBtn = document.getElementById('resetBtn');
+    const guessListDisplay = document.getElementById('guessList');
+    const guessInput = document.getElementById('userGuess');
+
+    // Helper function for ordinal suffixes (1st, 2nd, 3rd...)
+    function getOrdinal(n) {
+        let s = ["th", "st", "nd", "rd"],
+            v = n % 100;
+        return n + (s[(v - 20) % 10] || s[v] || s[0]);
+    }
+
+    // Function to handle the Enter key
+    function handleKeyPress(event) {
+        if (event.key === "Enter") {
+            checkGuess();
+        }
+    }
+
+    function triggerConfetti() {
+        confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
+    }
+
+    function checkGuess() {
+        const userGuess = parseInt(guessInput.value);
+
+        if (isNaN(userGuess) || userGuess < 0 || userGuess > 100) {
+            messageDisplay.textContent = "Invalid number! Stay between 0-100.";
+            messageDisplay.style.color = "red";
+            return;
+        }
+
+        guessHistory.push(userGuess);
+        updateHistoryDisplay();
+
+        if (userGuess === randomNumber) {
+            messageDisplay.textContent = `🎉 Correct! It was ${randomNumber}.`;
+            messageDisplay.style.color = "green";
+            resetBtn.style.display = "inline-block";
+            triggerConfetti();
+        } else if (userGuess > randomNumber) {
+            messageDisplay.textContent = "Too high! ↓";
+            messageDisplay.style.color = "#e67e22";
+        } else {
+            messageDisplay.textContent = "Too low! ↑";
+            messageDisplay.style.color = "#e67e22";
+        }
+
+        guessInput.value = "";
+        guessInput.focus();
+    }
+
+    function updateHistoryDisplay() {
+        guessListDisplay.innerHTML = "";
+        // Reverse the array to show the newest guess at the top, or keep as is for bottom-up
+        guessHistory.forEach((guess, index) => {
+            const li = document.createElement('li');
+            li.className = 'guess-item';
+            
+            const label = getOrdinal(index + 1) + " Guess:";
+            
+            li.innerHTML = `
+                <span class="guess-label">${label}</span>
+                <span class="guess-value">${guess}</span>
+            `;
+            // insertBefore puts the newest guess at the top of the list
+            guessListDisplay.insertBefore(li, guessListDisplay.firstChild);
+        });
+    }
+
+    function resetGame() {
+        randomNumber = Math.floor(Math.random() * 101);
+        guessHistory = [];
+        updateHistoryDisplay();
+        messageDisplay.textContent = "";
+        resetBtn.style.display = "none";
+        guessInput.value = "";
+        guessInput.focus();
+    }
+</script>
+
+</body>
+</html>
